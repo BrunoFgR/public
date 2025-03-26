@@ -1,9 +1,9 @@
 import unittest
-from src.htmlnode import HtmlNode
+from src.htmlnode import HTMLNode
 
 class TestHtmlNode(unittest.TestCase):
     def test_to_html_props(self):
-        node = HtmlNode(
+        node = HTMLNode(
             "div",
             "Hello, world!",
             None,
@@ -11,11 +11,11 @@ class TestHtmlNode(unittest.TestCase):
         )
         self.assertEqual(
             node.props_to_html(),
-            'class="greeting" href="https://boot.dev"',
+            ' class="greeting" href="https://boot.dev"',
         )
 
     def test_values(self):
-        node = HtmlNode(
+        node = HTMLNode(
             "div",
             "I wish I could read",
         )
@@ -33,11 +33,11 @@ class TestHtmlNode(unittest.TestCase):
         )
         self.assertEqual(
             node.props,
-            None,
+            {},
         )
 
     def test_repr(self):
-        node = HtmlNode(
+        node = HTMLNode(
             "p",
             "What a strange world",
             None,
@@ -45,7 +45,7 @@ class TestHtmlNode(unittest.TestCase):
         )
         self.assertEqual(
             node.__repr__(),
-            "HtmlNode(tag='p', value='What a strange world', children=None, props={'class': 'primary'})",
+            "HTMLNode(tag='p', value='What a strange world', children=None, props={'class': 'primary'})",
         )
 
 if __name__ == "__main__":
