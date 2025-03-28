@@ -5,6 +5,7 @@ from helpers import (
     split_nodes_delimiter,
     split_nodes_image,
     split_nodes_link,
+    text_to_textnodes,
     extract_markdown_images,
     extract_markdown_links
 )
@@ -332,3 +333,123 @@ class TestMarkdownLinkExtraction(unittest.TestCase):
                  Line 2 with [link2](url2)"""
         expected = [("link1", "url1"), ("link2", "url2")]
         self.assertEqual(extract_markdown_links(text), expected)
+
+class TestTextToTextNodes(unittest.TestCase):
+
+    def test_plain_text(self):
+        text = "This is plain text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0].text, "This is plain text")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+
+    def test_code_formatting(self):
+        text = "This is `code` text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(nodes[0].text, "This is ")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(nodes[1].text, "code")
+        self.assertEqual(nodes[1].text_type, TextType.CODE)
+        self.assertEqual(nodes[2].text, " text")
+        self.assertEqual(nodes[2].text_type, TextType.TEXT)
+
+    def test_italic_formatting(self):
+        text = "This is _italic_ text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(nodes[0].text, "This is ")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(nodes[1].text, "italic")
+        self.assertEqual(nodes[1].text_type, TextType.ITALIC)
+        self.assertEqual(nodes[2].text, " text")
+        self.assertEqual(nodes[2].text_type, TextType.TEXT)
+
+    def test_bold_formatting(self):
+        text = "This is **bold** text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(nodes[0].text, "This is ")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(nodes[1].text, "bold")
+        self.assertEqual(nodes[1].text_type, TextType.BOLD)
+        self.assertEqual(nodes[2].text, " text")
+        self.assertEqual(nodes[2].text_type, TextType.TEXT)
+
+    def test_link_formatting(self):
+        text = "This is a [link](https://example.com) text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(nodes[0].text, "This is a ")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(nodes[1].text, "link")
+        self.assertEqual(nodes[1].text_type, TextType.LINK)
+        self.assertEqual(nodes[1].url, "https://example.com")
+        self.assertEqual(nodes[2].text, " text")
+        self.assertEqual(nodes[2].text_type, TextType.TEXT)
+
+    def test_image_formatting(self):
+        text = "This is an ![image](image.jpg) text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(nodes[0].text, "This is an ")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(nodes[1].text, "image")
+        self.assertEqual(nodes[1].text_type, TextType.IMAGE)
+        self.assertEqual(nodes[1].url, "image.jpg")
+        self.assertEqual(nodes[2].text, " text")
+        self.assertEqual(nodes[2].text_type, TextType.TEXT)
+
+    def test_multiple_formatting(self):
+        text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 10)
+        self.assertEqual(nodes[0].text, "This is ")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(nodes[1].text, "text")
+        self.assertEqual(nodes[1].text_type, TextType.BOLD)
+        self.assertEqual(nodes[2].text, " with an ")
+        self.assertEqual(nodes[2].text_type, TextType.TEXT)
+        self.assertEqual(nodes[3].text, "italic")
+        self.assertEqual(nodes[3].text_type, TextType.ITALIC)
+        self.assertEqual(nodes[4].text, " word and a ")
+        self.assertEqual(nodes[4].text_type, TextType.TEXT)
+        self.assertEqual(nodes[5].text, "code block")
+        self.assertEqual(nodes[5].text_type, TextType.CODE)
+        self.assertEqual(nodes[6].text, " and an ")
+        self.assertEqual(nodes[6].text_type, TextType.TEXT)
+        self.assertEqual(nodes[7].text, "obi wan image")
+        self.assertEqual(nodes[7].text_type, TextType.IMAGE)
+        self.assertEqual(nodes[7].url, "https://i.imgur.com/fJRm4Vk.jpeg")
+        self.assertEqual(nodes[8].text, " and a ")
+        self.assertEqual(nodes[8].text_type, TextType.TEXT)
+        self.assertEqual(nodes[9].text, "link")
+        self.assertEqual(nodes[9].text_type, TextType.LINK)
+        self.assertEqual(nodes[9].url, "https://boot.dev")
+
+
+    def test_empty_text(self):
+        text = ""
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 0)
+
+    def test_invalid_markdown(self):
+        # Test unclosed code section
+        with self.assertRaises(ValueError):
+            text_to_textnodes("This is `unclosed code")
+
+        # Test unclosed italic section
+        with self.assertRaises(ValueError):
+            text_to_textnodes("This is _unclosed italic")
+
+        # Test unclosed bold section
+        with self.assertRaises(ValueError):
+            text_to_textnodes("This is **unclosed bold")
+
+        # Test invalid link
+        with self.assertRaises(ValueError):
+            text_to_textnodes("This is [unclosed](link")
+
+        # Test invalid image
+        with self.assertRaises(ValueError):
+            text_to_textnodes("This is ![unclosed](image")
