@@ -29,7 +29,7 @@ class TestHtmlNode(unittest.TestCase):
         )
         self.assertEqual(
             node.children,
-            None,
+            [],
         )
         self.assertEqual(
             node.props,
