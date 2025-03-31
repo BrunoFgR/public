@@ -1,9 +1,10 @@
 import re
 import os
 
+from pathlib import Path
 from block_markdown import markdown_to_html_node
 
-def generate_page(from_path, template_path, to_path):
+def generate_page(from_path, template_path, to_path, BASEPATH):
     print(f" * {from_path} {template_path} -> {to_path}")
     from_file = open(from_path, 'r')
     markdown_content = from_file.read()
@@ -19,6 +20,8 @@ def generate_page(from_path, template_path, to_path):
     title = extract_title(markdown_content)
     template = template_content.replace('{{ Title }}', title)
     template = template.replace('{{ Content }}', html)
+    template = template.replace('href="/', f'href="{BASEPATH}')
+    template = template.replace('src="/', f'src="{BASEPATH}')
 
     dest_dir_path = os.path.dirname(to_path)
     if not os.path.exists(dest_dir_path):
@@ -26,21 +29,15 @@ def generate_page(from_path, template_path, to_path):
     to_file = open(to_path, 'w')
     to_file.write(template)
 
-def generate_page_recursive(from_path, dest_path, func):
-    if not os.path.exists(dest_path):
-        os.mkdir(dest_path)
-
-    for filename in os.listdir(from_path):
-        if os.path.isdir(os.path.join(from_path, filename)):
-            generate_page_recursive(os.path.join(from_path, filename), os.path.join(dest_path, filename), func)
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, BASEPATH):
+    for filename in os.listdir(dir_path_content):
+        from_path = os.path.join(dir_path_content, filename)
+        dest_path = os.path.join(dest_dir_path, filename)
+        if os.path.isfile(from_path):
+            dest_path = Path(dest_path).with_suffix(".html")
+            generate_page(from_path, template_path, dest_path, BASEPATH)
         else:
-            func(os.path.join(from_path, filename), os.path.join(dest_path, filename.replace('.md', '.html')))
-
-def generate_page_with_template(template_path):
-    def inner_func(from_path, to_path):
-        generate_page(from_path, template_path, to_path)
-
-    return inner_func
+            generate_pages_recursive(from_path, template_path, dest_path, BASEPATH)
 
 def extract_title(markdown):
     title = re.search(r'^#\s+(.+)$', markdown, re.MULTILINE)
