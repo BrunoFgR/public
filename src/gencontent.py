@@ -26,6 +26,21 @@ def generate_page(from_path, template_path, to_path):
     to_file = open(to_path, 'w')
     to_file.write(template)
 
+def generate_page_recursive(from_path, dest_path, func):
+    if not os.path.exists(dest_path):
+        os.mkdir(dest_path)
+
+    for filename in os.listdir(from_path):
+        if os.path.isdir(os.path.join(from_path, filename)):
+            generate_page_recursive(os.path.join(from_path, filename), os.path.join(dest_path, filename), func)
+        else:
+            func(os.path.join(from_path, filename), os.path.join(dest_path, filename.replace('.md', '.html')))
+
+def generate_page_with_template(template_path):
+    def inner_func(from_path, to_path):
+        generate_page(from_path, template_path, to_path)
+
+    return inner_func
 
 def extract_title(markdown):
     title = re.search(r'^#\s+(.+)$', markdown, re.MULTILINE)
