@@ -13,28 +13,28 @@ class BlockType(Enum):
     ORDERED_LIST = 'ordered_list'
 
 def markdown_to_blocks(markdown):
-    content = markdown.strip()
-    if not content:
-        return []
+    blocks = markdown.split("\n\n")
+    filtered_blocks = []
+    for block in blocks:
+        if block == "":
+            continue
+        block = block.strip()
+        filtered_blocks.append(block)
+    return filtered_blocks
 
-    # Split by double newlines to separate blocks
-    blocks = []
-    for block in content.split('\n\n'):
-        # Remove leading/trailing whitespace from the block and each line
-        lines = [line.strip() for line in block.split('\n')]
-        # Join non-empty lines with single newlines
-        cleaned_block = '\n'.join(line for line in lines if line)
-        if cleaned_block:  # Only add non-empty blocks
-            blocks.append(cleaned_block)
-
-    return blocks
 
 def block_to_block_type(block):
-    lines = block.split('\n')
-    if block.startswith(('# ', "## ", "### ", "#### ", "##### ", "###### ")):
+    lines = block.split("\n")
+
+    if block.startswith(("# ", "## ", "### ", "#### ", "##### ", "###### ")):
         return BlockType.HEADING
     if len(lines) > 1 and lines[0].startswith("```") and lines[-1].startswith("```"):
         return BlockType.CODE
+    if block.startswith(">"):
+        for line in lines:
+            if not line.startswith(">"):
+                return BlockType.PARAGRAPH
+        return BlockType.QUOTE
     if block.startswith("- "):
         for line in lines:
             if not line.startswith("- "):
@@ -47,11 +47,6 @@ def block_to_block_type(block):
                 return BlockType.PARAGRAPH
             i += 1
         return BlockType.ORDERED_LIST
-    if block.startswith(">"):
-        for line in lines:
-            if not line.startswith("> "):
-                return BlockType.PARAGRAPH
-        return BlockType.QUOTE
     return BlockType.PARAGRAPH
 
 
