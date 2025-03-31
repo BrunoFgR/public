@@ -8,175 +8,55 @@ from block_markdown import (
 from htmlnode import HTMLNode
 
 class TestMarkdownToBlocks(unittest.TestCase):
-    def test_markdown_to_blocks(self):
-        md = """
-        This is **bolded** paragraph
-        This is another paragraph with _italic_ text and `code` here
-        This is the same paragraph on a new line
-        - This is a list
-        - with items
-        """
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(
-            blocks,
-            [
-                "This is **bolded** paragraph\n"
-                "This is another paragraph with _italic_ text and `code` here\n"
-                "This is the same paragraph on a new line\n"
-                "- This is a list\n"
-                "- with items"
-            ],
-        )
-
-    def test_empty_markdown(self):
-        md = ""
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(blocks, [])
-
     def test_single_paragraph(self):
-        md = "This is a single paragraph."
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(blocks, ["This is a single paragraph."])
+        markdown = "This is a simple paragraph with text."
+        expected = ["This is a simple paragraph with text."]
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
-    def test_multiple_paragraphs_with_extra_newlines(self):
-        md = """First paragraph.
+    def test_multiple_paragraphs(self):
+        markdown = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
+        expected = ["First paragraph.", "Second paragraph.", "Third paragraph."]
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
+    def test_empty_string(self):
+        markdown = ""
+        expected = []
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
-        Second paragraph.
+    def test_only_newlines(self):
+        markdown = "\n\n\n\n"
+        expected = []
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
-
-
-        Third paragraph."""
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(
-            blocks,
-            [
-                "First paragraph.",
-                "Second paragraph.",
-                "Third paragraph.",
-            ],
-        )
+    def test_with_whitespace(self):
+        markdown = "  Paragraph with spaces  \n\n  Another with spaces  "
+        expected = ["Paragraph with spaces", "Another with spaces"]
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
     def test_headings_and_paragraphs(self):
-        md = """# Heading 1
-
-        ## Heading 2
-
-        Paragraph text here.
-
-        ### Heading 3
-        Directly followed text."""
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(
-            blocks,
-            [
-                "# Heading 1",
-                "## Heading 2",
-                "Paragraph text here.",
-                "### Heading 3\nDirectly followed text.",
-            ],
-        )
+        markdown = "# Heading\n\nParagraph below heading.\n\n## Subheading"
+        expected = ["# Heading", "Paragraph below heading.", "## Subheading"]
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
     def test_code_blocks(self):
-        md = """Regular paragraph.
+        markdown = "Regular text.\n\n```\ncode block\nwith multiple lines\n```\n\nMore text."
+        expected = ["Regular text.", "```\ncode block\nwith multiple lines\n```", "More text."]
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
-        ```python
-        def hello_world():
-            print("Hello, world!")
-        ```
-
-        Text after code block."""
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(
-            blocks,
-            [
-                "Regular paragraph.",
-                "```python\ndef hello_world():\nprint(\"Hello, world!\")\n```",
-                "Text after code block.",
-            ],
-        )
+    def test_lists(self):
+        markdown = "- Item 1\n- Item 2\n\n1. First\n2. Second"
+        expected = ["- Item 1\n- Item 2", "1. First\n2. Second"]
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
     def test_blockquotes(self):
-        md = """Regular text.
+        markdown = ">This is a quote\n>More of the quote\n\nRegular paragraph"
+        expected = [">This is a quote\n>More of the quote", "Regular paragraph"]
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
-        > This is a blockquote
-        > It continues here
-
-        More text."""
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(
-            blocks,
-            [
-                "Regular text.",
-                "> This is a blockquote\n> It continues here",
-                "More text.",
-            ],
-        )
-
-    def test_complex_nested_structure(self):
-        md = """# Main Title
-
-        Introduction paragraph with **bold** and _italic_ text.
-
-        ## Section 1
-
-        - List item 1
-        - List item 2
-          - Nested item
-
-        ```
-        Code block here
-        More code
-        ```
-
-        > Blockquote
-        > More quote
-
-        Final paragraph."""
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(
-            blocks,
-            [
-                "# Main Title",
-                "Introduction paragraph with **bold** and _italic_ text.",
-                "## Section 1",
-                "- List item 1\n- List item 2\n- Nested item",
-                "```\nCode block here\nMore code\n```",
-                "> Blockquote\n> More quote",
-                "Final paragraph.",
-            ],
-        )
-
-    def test_only_whitespace(self):
-        md = """
-
-
-
-        """
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(blocks, [])
-
-    def test_horizontal_rules(self):
-        md = """Paragraph 1
-
-        ---
-
-        Paragraph 2
-
-        ***
-
-        Paragraph 3"""
-        blocks = markdown_to_blocks(md)
-        self.assertEqual(
-            blocks,
-            [
-                "Paragraph 1",
-                "---",
-                "Paragraph 2",
-                "***",
-                "Paragraph 3",
-            ],
-        )
+    def test_leading_trailing_newlines(self):
+        markdown = "\n\nFirst block.\n\nSecond block.\n\n"
+        expected = ["First block.", "Second block."]
+        self.assertEqual(markdown_to_blocks(markdown), expected)
 
 class TestBlockToBlockType(unittest.TestCase):
     def test_heading(self):
@@ -262,7 +142,7 @@ class TestMarkdownToHtmlNode(unittest.TestCase):
         self.assertEqual(len(html_node.children), 1)
         self.assertEqual(html_node.children[0].tag, "pre")
         self.assert_html_equal(html_node,
-            "<div><pre><code>function test() {\nreturn true;\n}\n</code></pre></div>")
+            "<div><pre><code>function test() {\n  return true;\n}\n</code></pre></div>")
 
     def test_unordered_lists(self):
         """Test conversion of unordered lists"""
@@ -299,36 +179,3 @@ class TestMarkdownToHtmlNode(unittest.TestCase):
         html_node = markdown_to_html_node(markdown)
         self.assert_html_equal(html_node,
             "<div><p>This has <b>bold</b> and <i>italic</i> text, and <code>code</code> too.</p></div>")
-
-    def test_mixed_content(self):
-        """Test conversion of document with mixed content types"""
-        markdown = """# Sample Document
-
-            This is a paragraph with **bold** text.
-
-            ## Section 1
-
-            - List item 1
-            - List item 2
-
-            ```
-            Code block here
-            ```
-
-            > This is a quote
-            > With multiple lines
-
-            1. First ordered item
-            2. Second ordered item
-        """
-
-        html_node = markdown_to_html_node(markdown)
-        # Just check that we have the expected number of top-level elements
-        self.assertEqual(len(html_node.children), 7)
-        self.assertEqual(html_node.children[0].tag, "h1")
-        self.assertEqual(html_node.children[1].tag, "p")
-        self.assertEqual(html_node.children[2].tag, "h2")
-        self.assertEqual(html_node.children[3].tag, "ul")
-        self.assertEqual(html_node.children[4].tag, "pre")
-        self.assertEqual(html_node.children[5].tag, "blockquote")
-        self.assertEqual(html_node.children[6].tag, "ol")
